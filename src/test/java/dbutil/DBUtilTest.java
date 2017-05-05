@@ -11,6 +11,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import javax.sql.DataSource;
 import java.sql.*;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
@@ -18,9 +19,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-/**
- * Created by 92429 on 31/03/2017.
- */
 @RunWith(MockitoJUnitRunner.class)
 public class DBUtilTest {
 
@@ -49,13 +47,13 @@ public class DBUtilTest {
         when(stmt.getParameterMetaData()).thenReturn(paramMetadata);
         when(paramMetadata.getParameterCount()).thenReturn(0);
         //
-        when(rs.next()).thenReturn(true);
+        when(rs.next()).thenReturn(true).thenReturn(true).thenReturn(false);
 
         when(stmt.executeQuery()).thenReturn(rs);
     }
 
     @Test
-    public void dbUtil_selectOne() {
+    public void dbUtil_iterate() {
 
         final String RET = "MEGA ITEM";
         DBUtil dbUtil = new DBUtil(ds);
@@ -79,4 +77,37 @@ public class DBUtilTest {
         assertEquals(1, iterateCount.get());
     }
 
+    @Test
+    public void dbUtil_selectOne() {
+
+        final String RET = "MEGA ITEM";
+        DBUtil dbUtil = new DBUtil(ds);
+
+        String selectedObj = dbUtil.selectOne("SELECT * FROM GOT.JOHNSNOW", new SimpleResultSetMapper<String>() {
+            @Override
+            public String mapObject(ResultSet rs) throws SQLException {
+                return RET;
+            }
+        });
+
+        assertEquals(RET, selectedObj);
+    }
+
+    @Test
+    public void dbUtil_selectAll() {
+
+        final String RET = "MEGA ITEM";
+        DBUtil dbUtil = new DBUtil(ds);
+
+        List<String> ret = dbUtil.selectAll("SELECT * FROM GOT.JOHNSNOW", new SimpleResultSetMapper<String>() {
+            @Override
+            public String mapObject(ResultSet rs) throws SQLException {
+                return RET;
+            }
+        });
+
+        assertEquals(2, ret.size());
+        assertEquals(RET, ret.get(0));
+        assertEquals(RET, ret.get(1));
+    }
 }
