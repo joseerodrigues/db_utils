@@ -68,7 +68,7 @@ class UncloseableConnectionImpl implements Connection{
 
 	@Override
 	public void close() throws SQLException {
-		con.close();
+		//con.close();
 	}
 
 	@Override
