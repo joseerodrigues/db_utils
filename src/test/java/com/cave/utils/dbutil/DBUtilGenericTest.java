@@ -1,4 +1,4 @@
-package dbutil;
+package com.cave.utils.dbutil;
 
 import com.cave.utils.dbutil.*;
 import org.junit.After;

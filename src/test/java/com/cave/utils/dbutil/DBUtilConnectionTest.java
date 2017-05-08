@@ -1,4 +1,4 @@
-package dbutil;
+package com.cave.utils.dbutil;
 
 import com.cave.utils.dbutil.DBUtil;
 import com.cave.utils.dbutil.JDBCAction;
