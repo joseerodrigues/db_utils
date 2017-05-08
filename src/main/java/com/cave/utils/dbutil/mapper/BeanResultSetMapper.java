@@ -1,4 +1,7 @@
-package com.cave.utils.dbutil;
+package com.cave.utils.dbutil.mapper;
+
+import com.cave.utils.dbutil.DBColumn;
+import com.cave.utils.dbutil.SimpleResultSetMapper;
 
 import java.lang.reflect.Field;
 import java.sql.ResultSet;

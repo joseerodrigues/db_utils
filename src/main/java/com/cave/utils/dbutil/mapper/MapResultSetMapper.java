@@ -1,4 +1,6 @@
-package com.cave.utils.dbutil;
+package com.cave.utils.dbutil.mapper;
+
+import com.cave.utils.dbutil.ResultSetMapper;
 
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -8,7 +10,7 @@ import java.sql.SQLException;
  * 
  * NOT Thread-safe
  */
-public class MapResultSetMapper implements ResultSetMapper<ResultSetMap>{
+public class MapResultSetMapper implements ResultSetMapper<ResultSetMap> {
 
 	private String[] columnLabels = null;
 	
@@ -36,8 +38,7 @@ public class MapResultSetMapper implements ResultSetMapper<ResultSetMap>{
 		
 		for (int i = 1; i <= columnCount; i++){
 			
-			String colName = metadata.getColumnLabel(i);				
-			
+			String colName = metadata.getColumnLabel(i);
 			this.columnLabels[i - 1] = colName;
 		}
 	}

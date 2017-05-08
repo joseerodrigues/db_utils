@@ -1,4 +1,4 @@
-package com.cave.utils.dbutil;
+package com.cave.utils.dbutil.mapper;
 
 import java.math.BigDecimal;
 import java.util.*;

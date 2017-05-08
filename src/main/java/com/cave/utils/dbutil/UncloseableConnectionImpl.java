@@ -285,7 +285,4 @@ class UncloseableConnectionImpl implements Connection{
 	public int getNetworkTimeout() throws SQLException {
 		return con.getNetworkTimeout();
 	}
-
-
-
 }
