@@ -5,11 +5,9 @@ import java.sql.SQLException;
 
 public interface ResultSetMapper<E> {
 
-	public void init(ResultSet rs) throws SQLException;
+	void init(ResultSet rs) throws SQLException;
 	
-	public void terminate();
+	void terminate();
 	
-	public E mapObject(ResultSet rs) throws SQLException;
-	
-	
+	E mapObject(ResultSet rs) throws SQLException;
 }

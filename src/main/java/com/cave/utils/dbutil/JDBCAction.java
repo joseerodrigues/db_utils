@@ -5,5 +5,5 @@ import java.sql.SQLException;
 
 public interface JDBCAction<T> {
 
-	public T execute(Connection conn) throws SQLException;
+	T execute(Connection conn) throws SQLException;
 }

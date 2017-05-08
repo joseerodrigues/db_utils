@@ -7,7 +7,6 @@ import java.sql.SQLException;
 /**
  * 
  * NOT Thread-safe
- * @author 92429
  */
 public class MapResultSetMapper implements ResultSetMapper<ResultSetMap>{
 

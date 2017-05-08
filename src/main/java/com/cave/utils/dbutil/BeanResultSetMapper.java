@@ -7,9 +7,6 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Created by 92429 on 14/03/2017.
- */
 public class BeanResultSetMapper<E> extends SimpleResultSetMapper<E> {
 
     private static class FieldInfo {
