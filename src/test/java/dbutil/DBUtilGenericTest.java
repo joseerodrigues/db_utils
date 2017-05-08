@@ -23,7 +23,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
-public class DBUtilTest {
+public class DBUtilGenericTest {
 
     @Mock
     private DataSource ds;
