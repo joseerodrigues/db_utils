@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class DBUtilGenericTest {
@@ -40,10 +40,6 @@ public class DBUtilGenericTest {
     @Mock
     private ParameterMetaData paramMetadata;
 
-    private boolean rsCloseCalled = false;
-    private boolean stmtCloseCalled = false;
-    private boolean connCloseCalled = false;
-
     @Before
     public void setUp() throws Exception {
 
@@ -55,138 +51,58 @@ public class DBUtilGenericTest {
         when(paramMetadata.getParameterCount()).thenReturn(0);
         //
         when(rs.next()).thenReturn(true).thenReturn(true).thenReturn(false);
-
         when(stmt.executeQuery()).thenReturn(rs);
-
-        Mockito.doAnswer(new Answer<Void>() {
-            @Override
-            public Void answer(InvocationOnMock invocation) throws Throwable {
-                rsCloseCalled = true;
-                return null;
-            }
-        }).when(rs).close();
-
-        Mockito.doAnswer(new Answer<Void>() {
-            @Override
-            public Void answer(InvocationOnMock invocation) throws Throwable {
-                stmtCloseCalled = true;
-                return null;
-            }
-        }).when(stmt).close();
-
-        Mockito.doAnswer(new Answer<Void>() {
-            @Override
-            public Void answer(InvocationOnMock invocation) throws Throwable {
-                connCloseCalled = true;
-                return null;
-            }
-        }).when(c).close();
-
-        rsCloseCalled = false;
-        stmtCloseCalled = false;
-        connCloseCalled = false;
     }
 
     @After
-    public void checkCloseResources(){
-        assertEquals(true, rsCloseCalled);
-        assertEquals(true, stmtCloseCalled);
-        assertEquals(true, connCloseCalled);
+    public void checkCloseResources() throws SQLException {
+        verify(rs).close();
+        verify(stmt).close();
+        verify(c).close();
     }
 
     @Test
-    public void dbUtil_mapper_lifecycle() {
-
-        final String RET = "MEGA ITEM";
+    public void dbUtil_mapper_lifecycle() throws SQLException {
         DBUtil dbUtil = new DBUtil(ds);
-        final AtomicReference<Boolean> initCalled = new AtomicReference<>(false);
-        final AtomicReference<Boolean> terminateCalled = new AtomicReference<>(false);
-        final AtomicReference<Boolean> mapCalled = new AtomicReference<>(false);
 
-        dbUtil.selectOne("SELECT * FROM GOT.JOHNSNOW", new ResultSetMapper<String>() {
+        ResultSetMapper<String> mockMapper = mock(ResultSetMapper.class);
 
-            @Override
-            public void init(ResultSet rs) throws SQLException {
-                initCalled.getAndSet(true);
-            }
+        dbUtil.selectOne("SELECT * FROM GOT.JOHNSNOW", mockMapper);
 
-            @Override
-            public void terminate() {
-                terminateCalled.getAndSet(true);
-            }
-
-            @Override
-            public String mapObject(ResultSet rs) throws SQLException {
-                mapCalled.getAndSet(true);
-                return RET;
-            }
-        });
-
-        assertEquals(true, initCalled.get());
-        assertEquals(true, terminateCalled.get());
-        assertEquals(true, mapCalled.get());
+        verify(mockMapper).init((ResultSet) any());
+        verify(mockMapper, times(2)).mapObject((ResultSet) any());
+        verify(mockMapper).terminate();
     }
 
     @Test
-    public void dbUtil_iterator_lifecycle() {
+    public void dbUtil_iterator_lifecycle() throws SQLException {
 
-        final String RET = "MEGA ITEM";
         DBUtil dbUtil = new DBUtil(ds);
-        final AtomicReference<Boolean> initCalled = new AtomicReference<>(false);
-        final AtomicReference<Boolean> terminateCalled = new AtomicReference<>(false);
-        final AtomicReference<Boolean> iterateCalled = new AtomicReference<>(false);
 
-        dbUtil.iterate("SELECT * FROM GOT.JOHNSNOW", new SimpleResultSetMapper<String>() {
-            @Override
-            public String mapObject(ResultSet rs) throws SQLException {
-                return RET;
-            }
-        }, new ResultSetIterator<String>() {
-            @Override
-            public void init() {
-                initCalled.getAndSet(true);
-            }
+        ResultSetMapper<String> mockMapper = mock(ResultSetMapper.class);
+        ResultSetIterator<String> mockIterator = mock(ResultSetIterator.class);
 
-            @Override
-            public void terminate() {
-                terminateCalled.getAndSet(true);
-            }
+        when(mockMapper.mapObject((ResultSet) any())).thenReturn("");
+        dbUtil.iterate("SELECT * FROM GOT.JOHNSNOW", mockMapper, mockIterator);
 
-            @Override
-            public boolean iterate(String item) {
-                iterateCalled.getAndSet(true);
-                return false;
-            }
-        });
-
-        assertEquals(true, initCalled.get());
-        assertEquals(true, terminateCalled.get());
-        assertEquals(true, iterateCalled.get());
+        verify(mockIterator).init();
+        verify(mockIterator).iterate(anyString());
+        verify(mockIterator).terminate();
     }
 
     @Test
-    public void dbUtil_iterate() {
+    public void dbUtil_iterate() throws SQLException {
 
-        final String RET = "MEGA ITEM";
         DBUtil dbUtil = new DBUtil(ds);
         final AtomicInteger iterateCount = new AtomicInteger(0);
 
-        dbUtil.iterate("SELECT * FROM GOT.JOHNSNOW", new SimpleResultSetMapper<String>() {
+        ResultSetMapper<String> mockMapper = mock(ResultSetMapper.class);
+        ResultSetIterator<String> mockIterator = mock(ResultSetIterator.class);
 
-            @Override
-            public String mapObject(ResultSet rs) throws SQLException {
-                return RET;
-            }
-        }, new SimpleResultSetIterator<String>() {
-            @Override
-            public boolean iterate(String item) {
-                assertEquals(RET, item);
-                iterateCount.incrementAndGet();
-                return false;
-            }
-        });
+        when(mockMapper.mapObject((ResultSet) any())).thenReturn("");
+        dbUtil.iterate("SELECT * FROM GOT.JOHNSNOW", mockMapper, mockIterator);
 
-        assertEquals(1, iterateCount.get());
+        verify(mockIterator).iterate(anyString());
     }
 
     @Test

@@ -17,6 +17,8 @@ import java.sql.SQLException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -28,42 +30,27 @@ public class DBUtilConnectionTest {
     @Mock
     private Connection c;
 
-    private boolean connCloseCalled = false;
-
     @Before
     public void setUp() throws Exception {
 
         assertNotNull(ds);
         when(ds.getConnection()).thenReturn(c);
-
-        Mockito.doAnswer(new Answer<Void>() {
-            @Override
-            public Void answer(InvocationOnMock invocation) throws Throwable {
-                connCloseCalled = true;
-                return null;
-            }
-        }).when(c).close();
-
-        connCloseCalled = false;
     }
 
     @Test
-    public void dbUtil_useConnection() {
+    public void dbUtil_useConnection() throws SQLException {
 
         DBUtil dbUtil = new DBUtil(ds);
 
         dbUtil.useConnection(new JDBCAction<Object>() {
             @Override
             public Object execute(Connection conn) throws SQLException {
-
-                assertEquals(false, connCloseCalled);
                 conn.close();
-                assertEquals(false, connCloseCalled);
-
+                verifyZeroInteractions(c);
                 return null;
             }
         });
 
-        assertEquals(true, connCloseCalled);
+        verify(c).close();
     }
 }
