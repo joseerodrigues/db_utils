@@ -15,11 +15,11 @@ public class ResultSetMap extends TreeMap<String, Object> {
 		super(theComparator);
 	}
 
-	ResultSetMap(Map<? extends String, ? extends Object> map) {
+	ResultSetMap(Map<? extends String, Object> map) {
 		super(map);
 	}
 
-	ResultSetMap(SortedMap<String, ? extends Object> map) {
+	ResultSetMap(SortedMap<String, Object> map) {
 		super(map);
 	}
 	

@@ -45,7 +45,7 @@ public class BeanResultSetMapper<E> extends SimpleResultSetMapper<E> {
         ResultSetMetaData metadata = rs.getMetaData();
         int colCount = metadata.getColumnCount();
 
-        for (int i = 1, l = colCount; i <= l; i++){
+        for (int i = 1; i <= colCount; i++){
 
             String colLabel = metadata.getColumnLabel(i);
 
@@ -58,14 +58,11 @@ public class BeanResultSetMapper<E> extends SimpleResultSetMapper<E> {
     @Override
     public E mapObject(ResultSet rs) throws SQLException {
 
-        E instance = null;
+        E instance;
 
         try {
             instance = typeToken.newInstance();
-        } catch (InstantiationException e) {
-            e.printStackTrace();
-            return null;
-        } catch (IllegalAccessException e) {
+        } catch (InstantiationException | IllegalAccessException e) {
             e.printStackTrace();
             return null;
         }

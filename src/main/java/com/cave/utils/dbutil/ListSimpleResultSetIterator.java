@@ -5,7 +5,7 @@ import java.util.List;
 
 class ListSimpleResultSetIterator<T> extends SimpleResultSetIterator<T> {
 
-	private ArrayList<T> list = new ArrayList<T>();
+	private ArrayList<T> list = new ArrayList<>();
 	
 	private boolean continueIteration = false;
 	

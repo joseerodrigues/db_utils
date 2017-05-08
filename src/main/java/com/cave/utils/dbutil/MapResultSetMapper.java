@@ -16,12 +16,10 @@ public class MapResultSetMapper implements ResultSetMapper<ResultSetMap>{
 	public ResultSetMap mapObject(ResultSet rs) throws SQLException {
 		
 		ResultSetMap ret = new ResultSetMap();
-		
-		for (int i = 0, l = this.columnLabels.length; i < l; i++){
-			
-			String colName = this.columnLabels[i];
+
+		for (String colName : this.columnLabels) {
+
 			Object value = rs.getObject(colName);
-			
 			ret.put(colName, value);
 		}
 		
@@ -36,7 +34,7 @@ public class MapResultSetMapper implements ResultSetMapper<ResultSetMap>{
 		int columnCount = metadata.getColumnCount();
 		this.columnLabels = new String[columnCount];
 		
-		for (int i = 1, l = columnCount; i <= l; i++){
+		for (int i = 1; i <= columnCount; i++){
 			
 			String colName = metadata.getColumnLabel(i);				
 			

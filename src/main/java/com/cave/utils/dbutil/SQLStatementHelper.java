@@ -6,9 +6,9 @@ import java.util.Map.Entry;
 public class SQLStatementHelper {
 
 	private StringBuilder query = null;
-	private List<String> paramsSql = new ArrayList<String>();
-	private Map<String, Integer> paramsInSql = new HashMap<String, Integer>();
-	private List<Object> paramValues = new ArrayList<Object>();		
+	private List<String> paramsSql = new ArrayList<>();
+	private Map<String, Integer> paramsInSql = new HashMap<>();
+	private List<Object> paramValues = new ArrayList<>();
 	
 	public SQLStatementHelper(String sql){
 		
@@ -22,10 +22,8 @@ public class SQLStatementHelper {
 	
 	public void addInParam(String paramString, Set<String> paramValues){
 		paramsInSql.put(paramString, paramValues.size());
-		
-		for (Object v : paramValues){
-			this.paramValues.add(v);
-		}		
+
+		this.paramValues.addAll(paramValues);
 	}
 	
 	private StringBuilder genSQLQuery(StringBuilder sqlQuery, List<String> paramsSql) {
@@ -33,17 +31,15 @@ public class SQLStatementHelper {
 		if (paramsSql == null || paramsSql.isEmpty()){
 			return sqlQuery;
 		}
-		
-		StringBuilder ret = sqlQuery;
-		
+
 		for (int i = 0, s = paramsSql.size(); i < s; i++){
 			
 			String param = paramsSql.get(i);						
 			
-			ret.append(param);
+			sqlQuery.append(param);
 			
 			if (i < s - 1){
-				ret.append(" AND ");
+				sqlQuery.append(" AND ");
 			}
 		}
 		
@@ -53,20 +49,20 @@ public class SQLStatementHelper {
 			
 			String param = entry.getKey();
 			int nParams = entry.getValue();
-			ret.append(" AND ").append(param).append(" IN (");
+			sqlQuery.append(" AND ").append(param).append(" IN (");
 			
 			for (int i = 0; i < nParams; i++){
 				
-				ret.append("?");
+				sqlQuery.append("?");
 				
 				if (i < nParams - 1){
-					ret.append(",");
+					sqlQuery.append(",");
 				}
 			}
-			ret.append(")");
+			sqlQuery.append(")");
 		}
 		
-		return ret;
+		return sqlQuery;
 	}
 
 	public StringBuilder getSQLQuery(){

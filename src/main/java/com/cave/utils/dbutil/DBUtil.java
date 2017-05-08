@@ -52,9 +52,8 @@ public class DBUtil {
 		}
 
 		try {
-			Connection conn = this.dataSource.getConnection();
-			
-			return conn;
+
+			return this.dataSource.getConnection();
 			
 		} catch (Exception e) {		
 			logger.error("Erro ao obter conexção. msg=" + e.getMessage());
@@ -181,7 +180,7 @@ public class DBUtil {
 	
 	public <T> List<T> selectAll(String query, ResultSetMapper<T> rsMapper, Object ... params){
 				
-		ListSimpleResultSetIterator<T> listIterator = new ListSimpleResultSetIterator<T>(true);
+		ListSimpleResultSetIterator<T> listIterator = new ListSimpleResultSetIterator<>(true);
 		
 		iterate(query, rsMapper, listIterator, params);
 				
@@ -194,7 +193,7 @@ public class DBUtil {
 	
 	public <T> T selectOne(String query, ResultSetMapper<T> rsMapper, Object ... params){
 		
-		ListSimpleResultSetIterator<T> listIterator = new ListSimpleResultSetIterator<T>(false);
+		ListSimpleResultSetIterator<T> listIterator = new ListSimpleResultSetIterator<>(false);
 					
 		iterate(query, rsMapper, listIterator, params);
 		
