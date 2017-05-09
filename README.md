@@ -32,10 +32,8 @@ dbUtil.useConnection(...);
 
 * iterate
 ````java
-ResultSetMapper<ResultSetMap> rsMapper = new MapResultSetMapper();
-
 dbUtil.iterate("SELECT * FROM TEST.TABLE_NAME WHERE COL_NAME = ?", 
-    rsMapper, new SimpleResultSetIterator<ResultSetMap>() {
+    Mappers.mapMapper(), new SimpleResultSetIterator<ResultSetMap>() {
     
     @Override
     public boolean iterate(ResultSetMap item) {
