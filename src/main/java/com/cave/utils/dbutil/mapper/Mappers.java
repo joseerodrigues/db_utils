@@ -31,4 +31,8 @@ public final class Mappers {
     public static ResultSetMapper<String> stringMapper(int colIndex, boolean trim){
         return new StringResultSetMapper(colIndex, false);
     }
+
+    public static <E> ResultSetMapper<E> beanMapper(Class<E> typeToken){
+        return new BeanResultSetMapper<>(typeToken);
+    }
 }

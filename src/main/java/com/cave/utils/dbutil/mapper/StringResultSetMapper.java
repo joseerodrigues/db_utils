@@ -3,9 +3,6 @@ package com.cave.utils.dbutil.mapper;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-/**
- * Created by 92429 on 09/05/2017.
- */
 public class StringResultSetMapper extends BasicResultSetMapper<String> {
 
     private boolean trim = false;
