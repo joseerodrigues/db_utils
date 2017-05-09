@@ -28,8 +28,9 @@ dbUtil.delete(...);
 dbUtil.useConnection(...);
 ````
 
-Sample usage
+####Sample Usage
 
+* iterate
 ````java
 ResultSetMapper<ResultSetMap> rsMapper = new MapResultSetMapper();
 
@@ -43,4 +44,13 @@ dbUtil.iterate("SELECT * FROM TEST.TABLE_NAME WHERE COL_NAME = ?",
         return true; // false to stop iterating
     }
 }, "colValue");
+````
+
+* selectOne
+
+````java
+BasicResultSetMapper<Integer> countMapper = new BasicResultSetMapper<Integer>(1);
+
+Integer count = dbUtil.selectOne("SELECT COUNT(1) FROM TEST.TABLE_NAME", countMapper);
+System.out.println("Count  = " + count);
 ````
