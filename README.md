@@ -28,7 +28,7 @@ dbUtil.delete(...);
 dbUtil.useConnection(...);
 ````
 
-####Sample Usage
+#### Sample Usage
 
 * iterate
 ````java
