@@ -90,7 +90,7 @@ public class Product {
 The code for **selectAll** becomes:
 
 ````java
-List<Orgao> Product = dbUtil.selectAll("SELECT * FROM TEST_TABLE", 
+List<Product> products = dbUtil.selectAll("SELECT * FROM TEST_TABLE", 
                                 Mappers.beanMapper(Product.class));
 ````
 
