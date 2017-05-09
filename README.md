@@ -28,3 +28,19 @@ dbUtil.delete(...);
 dbUtil.useConnection(...);
 ````
 
+Sample usage
+
+````java
+ResultSetMapper<ResultSetMap> rsMapper = new MapResultSetMapper();
+
+dbUtil.iterate("SELECT * FROM TEST.TABLE_NAME WHERE COL_NAME = ?", 
+    rsMapper, new SimpleResultSetIterator<ResultSetMap>() {
+    
+    @Override
+    public boolean iterate(ResultSetMap item) {
+
+        System.out.println(item);
+        return true; // false to stop iterating
+    }
+}, "colValue");
+````
