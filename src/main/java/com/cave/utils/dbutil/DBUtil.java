@@ -8,6 +8,9 @@ import javax.sql.DataSource;
 import java.sql.*;
 import java.util.List;
 
+/**
+ *
+ */
 public class DBUtil {
 
 	private static final String CLASSNAME = DBUtil.class.getSimpleName();
@@ -79,7 +82,7 @@ public class DBUtil {
 					if (this.conn == null && !c.isClosed()){
 						c.commit();
 						c.close();
-					}									
+					}
 				} catch (SQLException e) {
 					e.printStackTrace(System.err);
 				}			
@@ -226,13 +229,21 @@ public class DBUtil {
 		if (conn == null){
 			throw new NullPointerException("conn");
 		}
-		
-		try{			
+        boolean autoCommit = true;
+
+
+		try{
+		    autoCommit = conn.getAutoCommit();
 			return action.execute(new UncloseableConnectionImpl(conn));			
 		}catch(Throwable t){
 			t.printStackTrace(System.err);
 		}finally{
-			close(conn);
+            try {
+                conn.setAutoCommit(autoCommit);
+            } catch (SQLException e) {
+                e.printStackTrace(System.err);
+            }
+            close(conn);
 		}
 		
 		return null;

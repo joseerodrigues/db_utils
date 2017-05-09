@@ -38,11 +38,33 @@ public class DBUtilConnectionTest {
             @Override
             public Object execute(Connection conn) throws SQLException {
                 conn.close();
-                verifyZeroInteractions(c);
                 return null;
             }
         });
 
         verify(c).close();
+    }
+
+    /**
+     *  when used directly with connection, it is the responsability of the client to close it
+     * @throws SQLException
+     */
+    @Test
+    public void dbUtil_useConnection_noClose() throws SQLException {
+
+        DBUtil dbUtil = new DBUtil(c);
+
+        dbUtil.useConnection(new JDBCAction<String>() {
+            @Override
+            public String execute(Connection conn) throws SQLException {
+                return null;
+            }
+        });
+
+        verify(c, times(0)).close();
+
+        c.close();
+
+        verify(c, times(1)).close();
     }
 }
