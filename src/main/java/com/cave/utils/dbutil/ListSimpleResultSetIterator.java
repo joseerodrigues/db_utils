@@ -1,5 +1,7 @@
 package com.cave.utils.dbutil;
 
+import com.cave.utils.dbutil.mapper.SimpleResultSetIterator;
+
 import java.util.ArrayList;
 import java.util.List;
 

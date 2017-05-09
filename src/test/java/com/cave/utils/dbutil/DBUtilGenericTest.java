@@ -1,5 +1,6 @@
 package com.cave.utils.dbutil;
 
+import com.cave.utils.dbutil.mapper.SimpleResultSetMapper;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

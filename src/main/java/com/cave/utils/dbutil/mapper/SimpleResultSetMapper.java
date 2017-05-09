@@ -1,4 +1,6 @@
-package com.cave.utils.dbutil;
+package com.cave.utils.dbutil.mapper;
+
+import com.cave.utils.dbutil.ResultSetMapper;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;

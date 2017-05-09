@@ -1,5 +1,6 @@
 package com.cave.utils.dbutil;
 
+import com.cave.utils.dbutil.mapper.SimpleResultSetMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,7 +17,7 @@ public class DBUtil {
 	private DataSource dataSource = null;
 	private Connection conn = null;
 
-	private static final class DummyResultSetMapper extends SimpleResultSetMapper<Object>{
+	private static final class DummyResultSetMapper extends SimpleResultSetMapper<Object> {
 
 		private static final Object o = new Object();
 		
