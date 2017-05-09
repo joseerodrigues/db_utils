@@ -13,6 +13,13 @@ Connection conn  = ...;
 DBUtil dbUtil = new DBUtil(conn);
 ````
 
+>**NOTE**
+When passing a *java.sql.Connection* to the constructor instead of a *javax.sql.DataSource*, 
+the connection will not be closed by *DBUtil* and should be closed by the client.
+This is to easily allow for multiple instances of *DBUtil* sharing the same Connection, 
+such as when *useConnection* is called.
+
+
 Then
 
 ````java
