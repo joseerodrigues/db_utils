@@ -46,7 +46,7 @@ public class DBUtilGenericTest {
         when(stmt.getParameterMetaData()).thenReturn(paramMetadata);
         when(paramMetadata.getParameterCount()).thenReturn(0);
         //
-        when(rs.next()).thenReturn(true).thenReturn(true).thenReturn(false);
+        when(rs.next()).thenReturn(true, true, false);
         when(stmt.executeQuery()).thenReturn(rs);
     }
 
