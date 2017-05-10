@@ -63,7 +63,7 @@ public class BeanResultSetMapper<E> extends SimpleResultSetMapper<E> {
         try {
             instance = typeToken.newInstance();
         } catch (InstantiationException | IllegalAccessException e) {
-            e.printStackTrace();
+            e.printStackTrace(System.err);
             return null;
         }
 
@@ -76,13 +76,13 @@ public class BeanResultSetMapper<E> extends SimpleResultSetMapper<E> {
 
             try {
                 Object value = rs.getObject(colName);
-                if (trim){
+                if (trim && value != null){
                     value = ((String)value).trim();
                 }
 
                 field.set(instance, value);
             } catch (IllegalAccessException e) {
-                e.printStackTrace();
+                e.printStackTrace(System.err);
             }
         }
 
