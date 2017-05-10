@@ -6,7 +6,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.invocation.InvocationOnMock;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.stubbing.Answer;
 
 import javax.sql.DataSource;
 import java.sql.*;
@@ -28,7 +30,10 @@ public class DBUtilGenericTest {
     private Connection c;
 
     @Mock
-    private PreparedStatement stmt;
+    private PreparedStatement pstmt;
+
+    @Mock
+    private Statement stmt;
 
     @Mock
     private ResultSet rs;
@@ -36,24 +41,43 @@ public class DBUtilGenericTest {
     @Mock
     private ParameterMetaData paramMetadata;
 
+    private boolean usingPreparedStatement = false;
+
     @Before
     public void setUp() throws Exception {
 
         assertNotNull(ds);
 
-        when(c.prepareStatement(any(String.class))).thenReturn(stmt);
+        usingPreparedStatement = false;
+        when(c.prepareStatement(any(String.class))).thenAnswer(new Answer<PreparedStatement>() {
+            @Override
+            public PreparedStatement answer(InvocationOnMock invocation) throws Throwable {
+                usingPreparedStatement = true;
+                return pstmt;
+            }
+        });
+
+        when(c.createStatement()).thenReturn(stmt);
+
         when(ds.getConnection()).thenReturn(c);
-        when(stmt.getParameterMetaData()).thenReturn(paramMetadata);
+        when(pstmt.getParameterMetaData()).thenReturn(paramMetadata);
         when(paramMetadata.getParameterCount()).thenReturn(0);
         //
         when(rs.next()).thenReturn(true, true, false);
-        when(stmt.executeQuery()).thenReturn(rs);
+        when(pstmt.executeQuery()).thenReturn(rs);
+        when(stmt.executeQuery(anyString())).thenReturn(rs);
     }
 
     @After
     public void checkCloseResources() throws SQLException {
         verify(rs).close();
-        verify(stmt).close();
+
+        if (usingPreparedStatement){
+            verify(pstmt).close();
+        }else{
+            verify(stmt).close();
+        }
+
         verify(c).close();
     }
 
@@ -64,6 +88,19 @@ public class DBUtilGenericTest {
         ResultSetMapper<String> mockMapper = mock(ResultSetMapper.class);
 
         dbUtil.selectOne("SELECT * FROM GOT.JOHNSNOW", mockMapper);
+
+        verify(mockMapper).init((ResultSet) any());
+        verify(mockMapper, times(2)).mapObject((ResultSet) any());
+        verify(mockMapper).terminate();
+    }
+
+    @Test
+    public void dbUtil_mapper_lifecycle_param() throws SQLException {
+        DBUtil dbUtil = new DBUtil(ds);
+
+        ResultSetMapper<String> mockMapper = mock(ResultSetMapper.class);
+
+        dbUtil.selectOne("SELECT * FROM GOT.JOHNSNOW WHERE KNOWS_SOMETHING = ?", mockMapper, false);
 
         verify(mockMapper).init((ResultSet) any());
         verify(mockMapper, times(2)).mapObject((ResultSet) any());

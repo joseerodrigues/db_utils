@@ -108,8 +108,12 @@ public class DBUtil {
 		}
 	}
 	
-	private PreparedStatement createPreparedStatement(Connection conn, String query, Object ... params) throws SQLException{
-		
+	private Statement createStatement(Connection conn, String query, Object ... params) throws SQLException{
+
+	    if (params == null || params.length == 0){
+	        return conn.createStatement();
+        }
+
 		PreparedStatement pstmt = conn.prepareStatement(query);		
 		ParameterMetaData paramMetadata = pstmt.getParameterMetaData();
 		
@@ -146,13 +150,18 @@ public class DBUtil {
 			throw new NullPointerException("rsIterator");
 		}
 		
-		PreparedStatement pstmt = null;
+		Statement stmt = null;
 		ResultSet rs = null;
 		
 		try {
-			pstmt = createPreparedStatement(conn, query, params);				
-			rs = pstmt.executeQuery();
-			
+			stmt = createStatement(conn, query, params);
+
+			if (stmt instanceof PreparedStatement){
+                rs = ((PreparedStatement)stmt).executeQuery();
+            }else{
+			    rs = stmt.executeQuery(query);
+            }
+
 			rsMapper.init(rs);
 			rsIterator.init();
 			
@@ -172,7 +181,7 @@ public class DBUtil {
 		} catch (SQLException e) {
 			e.printStackTrace(System.err);
 		}finally{
-			close(rs, pstmt, conn);	
+			close(rs, stmt, conn);
 			rsMapper.terminate();
 			rsIterator.terminate();
 		}
@@ -248,7 +257,7 @@ public class DBUtil {
 		
 		return null;
 	}
-	
+
 	private int executeUpdate(String sqlUpdate, Object ... params){
 		
 		Connection conn = createConnection();
@@ -257,16 +266,21 @@ public class DBUtil {
 			throw new NullPointerException("conn");
 		}
 		
-		PreparedStatement pstmt = null;
+		Statement stmt = null;
 		
 		try {
-			pstmt = createPreparedStatement(conn, sqlUpdate, params);				
-			return pstmt.executeUpdate();						
+			stmt = createStatement(conn, sqlUpdate, params);
+
+			if (stmt instanceof PreparedStatement){
+                return ((PreparedStatement)stmt).executeUpdate();
+            }else{
+			    return stmt.executeUpdate(sqlUpdate);
+            }
 			
 		} catch (SQLException e) {
 			e.printStackTrace(System.err);
 		}finally{
-			close(pstmt, conn);	
+			close(stmt, conn);
 		}
 		
 		return -1;
