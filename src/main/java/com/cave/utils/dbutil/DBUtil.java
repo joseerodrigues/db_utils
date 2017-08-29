@@ -1,5 +1,7 @@
 package com.cave.utils.dbutil;
 
+import com.cave.utils.dbutil.mapper.MapResultSetMapper;
+import com.cave.utils.dbutil.mapper.ResultSetMap;
 import com.cave.utils.dbutil.mapper.SimpleResultSetMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -108,10 +110,12 @@ public class DBUtil {
 		}
 	}
 	
-	private Statement createStatement(Connection conn, String query, Object ... params) throws SQLException{
+	private Statement createStatement(Connection conn, boolean generateKeys, String query, Object ... params) throws SQLException{
 
 	    if (params == null || params.length == 0){
-	        return conn.createStatement();
+	        if (!generateKeys){
+                return conn.createStatement();
+            }
         }
 
 		PreparedStatement pstmt = conn.prepareStatement(query);		
@@ -120,9 +124,7 @@ public class DBUtil {
 		int paramCount = paramMetadata.getParameterCount();
 		
 		if (paramCount > 0 && (params != null && params.length > 0)){
-			
-			for (int i = 1; i <= paramCount; i++){					
-				
+			for (int i = 1; i <= paramCount; i++){
 				Object paramValue = params[i - 1];				
 				pstmt.setObject(i, paramValue);
 			}										
@@ -154,7 +156,7 @@ public class DBUtil {
 		ResultSet rs = null;
 		
 		try {
-			stmt = createStatement(conn, query, params);
+			stmt = createStatement(conn, false, query, params);
 
 			if (stmt instanceof PreparedStatement){
                 rs = ((PreparedStatement)stmt).executeQuery();
@@ -179,6 +181,7 @@ public class DBUtil {
 			}						
 			
 		} catch (SQLException e) {
+            logErrorInQuery(e, query, params);
 			e.printStackTrace(System.err);
 		}finally{
 			close(rs, stmt, conn);
@@ -269,7 +272,7 @@ public class DBUtil {
 		Statement stmt = null;
 		
 		try {
-			stmt = createStatement(conn, sqlUpdate, params);
+			stmt = createStatement(conn, false, sqlUpdate, params);
 
 			if (stmt instanceof PreparedStatement){
                 return ((PreparedStatement)stmt).executeUpdate();
@@ -278,6 +281,7 @@ public class DBUtil {
             }
 			
 		} catch (SQLException e) {
+            logErrorInQuery(e, sqlUpdate, params);
 			e.printStackTrace(System.err);
 		}finally{
 			close(stmt, conn);
@@ -285,7 +289,7 @@ public class DBUtil {
 		
 		return -1;
 	}
-	
+
 	public int insert(String sqlInsert){
 		return executeUpdate(sqlInsert, (Object[])null);
 	}
@@ -308,5 +312,58 @@ public class DBUtil {
 	
 	public int delete(String sqlDelete, Object ... params){
 		return executeUpdate(sqlDelete, params);
+	}
+
+	public ResultSetMap getKeysForInsert(String sqlInsert, Object ... params){
+		Connection conn = createConnection();
+		Statement stmt = null;
+
+		ResultSetMap ret = new ResultSetMap();
+		ResultSet generatedKeys = null;
+		try {
+			stmt = createStatement(conn, true, sqlInsert, params);
+            ((PreparedStatement)stmt).executeUpdate();
+
+			generatedKeys = stmt.getGeneratedKeys();
+
+			MapResultSetMapper mapper = new MapResultSetMapper();
+			mapper.init(generatedKeys);
+
+			while(generatedKeys.next()){
+				ret.putAll(mapper.mapObject(generatedKeys));
+			}
+
+			mapper.terminate();
+
+		} catch (SQLException e) {
+			logErrorInQuery(e, sqlInsert, params);
+			e.printStackTrace(System.err);
+		}finally{
+			close(generatedKeys, stmt, conn);
+		}
+
+		return ret;
+	}
+
+	private void logErrorInQuery(Throwable t, String query, Object ... params){
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append("Exception Thrown: ").append("msg = ").append(t.getMessage()).append(". SQL = ").append(query);
+
+		if (params != null && params.length > 0){
+			sb.append(". PARAMS = [");
+
+			for (int i = 0, l = params.length; i < l; i++){
+				sb.append(params[i]);
+
+				if (i + 1 < l){
+					sb.append(", ");
+				}
+			}
+			sb.append("]");
+		}
+
+		logger.error(sb.toString());
 	}
 }

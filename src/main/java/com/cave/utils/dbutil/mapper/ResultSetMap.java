@@ -7,7 +7,7 @@ public class ResultSetMap extends TreeMap<String, Object> {
 	
 	private static final long serialVersionUID = 391972271611412480L;
 
-	ResultSetMap() {
+	public ResultSetMap() {
 		super();
 	}
 
