@@ -1,6 +1,5 @@
 package com.cave.utils.dbutil;
 
-
 public interface ResultSetIterator<T> {
 
 	void init();

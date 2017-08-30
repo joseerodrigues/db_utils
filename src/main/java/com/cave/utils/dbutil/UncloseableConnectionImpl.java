@@ -6,8 +6,6 @@ import java.util.Properties;
 import java.util.concurrent.Executor;
 
 class UncloseableConnectionImpl implements Connection{
-
-
     private Connection con = null;
 
 	UncloseableConnectionImpl(Connection con) {

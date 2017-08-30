@@ -1,5 +1,8 @@
 package com.cave.utils.dbutil.mapper;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.lang.reflect.Field;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -8,6 +11,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class BeanResultSetMapper<E> extends SimpleResultSetMapper<E> {
+
+    private static final Logger logger = LoggerFactory.getLogger(BeanResultSetMapper.class);
 
     private static class FieldInfo {
         Field field;
@@ -50,7 +55,7 @@ public class BeanResultSetMapper<E> extends SimpleResultSetMapper<E> {
             String colLabel = metadata.getColumnLabel(i);
 
             if (!this.colsFields.containsKey(colLabel)){
-                System.out.println("WARN: Column '" + colLabel + "' not found");
+                logger.warn("Column '" + colLabel + "' not found");
             }
         }
     }

@@ -10,6 +10,9 @@ import javax.sql.DataSource;
 import java.sql.*;
 import java.util.List;
 
+import static com.cave.utils.dbutil.Checks.checkNull;
+import static com.cave.utils.dbutil.Checks.checkNullOrEmpty;
+
 /**
  *
  */
@@ -23,7 +26,6 @@ public class DBUtil {
 	private Connection conn = null;
 
 	private static final class DummyResultSetMapper extends SimpleResultSetMapper<Object> {
-
 		private static final Object o = new Object();
 		
 		@Override
@@ -31,22 +33,24 @@ public class DBUtil {
 			return o;
 		}		
 	}
-	
+
+	/**
+	 *
+	 * @param ds
+	 */
 	public DBUtil(DataSource ds){
-		
-		if (ds == null){
-			throw new NullPointerException("ds");
-		}
+		checkNull(ds, "ds");
 		
 		this.dataSource = ds;
 	}
-	
+
+	/**
+	 *
+	 * @param conn
+	 */
 	public DBUtil(Connection conn){
 		
-		if (conn == null){
-			throw new NullPointerException("conn");
-		}
-		
+		checkNull(conn, "conn");
 		this.conn = conn;
 	}
 
@@ -131,27 +135,35 @@ public class DBUtil {
 		}
 		
 		return pstmt;
-	}	
-	
+	}
+
+	/**
+	 *
+	 * @param query
+	 * @param rsMapper
+	 * @param rsIterator
+	 * @param <T>
+	 */
 	public <T> void iterate(String query, ResultSetMapper<T> rsMapper, ResultSetIterator<T> rsIterator){
 		iterate(query, rsMapper, rsIterator, (Object[])null);
 	}
-	
+
+	/**
+	 *
+	 * @param query
+	 * @param rsMapper
+	 * @param rsIterator
+	 * @param params
+	 * @param <T>
+	 */
 	public <T> void iterate(String query, ResultSetMapper<T> rsMapper, ResultSetIterator<T> rsIterator, Object ... params){
+	    checkNullOrEmpty(query, "query");
 		Connection conn = createConnection();
-		
-		if (conn == null){
-			throw new NullPointerException("conn");
-		}
-		
-		if (rsMapper == null){
-			throw new NullPointerException("rsMapper");
-		}
-		
-		if (rsIterator == null){
-			throw new NullPointerException("rsIterator");
-		}
-		
+
+		checkNull(conn, "conn");
+		checkNull(rsMapper, "rsMapper");
+		checkNull(rsIterator, "rsIterator");
+
 		Statement stmt = null;
 		ResultSet rs = null;
 		
@@ -237,13 +249,10 @@ public class DBUtil {
 	
 	public <T> T useConnection(JDBCAction<T> action){
 		Connection conn = createConnection();
-		
-		if (conn == null){
-			throw new NullPointerException("conn");
-		}
+		checkNull(conn, "conn");
+        checkNull(action, "action");
+
         boolean autoCommit = true;
-
-
 		try{
 		    autoCommit = conn.getAutoCommit();
 			return action.execute(new UncloseableConnectionImpl(conn));			
@@ -262,12 +271,9 @@ public class DBUtil {
 	}
 
 	private int executeUpdate(String sqlUpdate, Object ... params){
-		
+        checkNullOrEmpty(sqlUpdate, "sqlUpdate");
 		Connection conn = createConnection();
-		
-		if (conn == null){
-			throw new NullPointerException("conn");
-		}
+		checkNull(conn, "conn");
 		
 		Statement stmt = null;
 		
@@ -315,7 +321,9 @@ public class DBUtil {
 	}
 
 	public ResultSetMap getKeysForInsert(String sqlInsert, Object ... params){
+		checkNullOrEmpty(sqlInsert, "sqlInsert");
 		Connection conn = createConnection();
+		checkNull(conn, "conn");
 		Statement stmt = null;
 
 		ResultSetMap ret = new ResultSetMap();
