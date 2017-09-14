@@ -330,7 +330,12 @@ public class DBUtil {
 		ResultSet generatedKeys = null;
 		try {
 			stmt = createStatement(conn, true, sqlInsert, params);
-            ((PreparedStatement)stmt).executeUpdate();
+
+			if (stmt instanceof PreparedStatement){
+				((PreparedStatement)stmt).executeUpdate();
+			}else{
+				stmt.executeUpdate(sqlInsert, Statement.RETURN_GENERATED_KEYS);
+			}
 
 			generatedKeys = stmt.getGeneratedKeys();
 
