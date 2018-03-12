@@ -20,9 +20,6 @@ public class DBUtil {
 	private static final String CLASSNAME = DBUtil.class.getSimpleName();
 	private static final Logger logger = LoggerFactory.getLogger(DBUtil.class);
 	private static final DummyResultSetMapper dummyMapper = new DummyResultSetMapper();
-	
-	private DataSource dataSource = null;
-	private Connection conn = null;
 
 	private static final class DummyResultSetMapper extends SimpleResultSetMapper<Object> {
 		private static final Object o = new Object();
@@ -39,6 +36,10 @@ public class DBUtil {
             return rs;
         }
     }
+
+    private DataSource dataSource = null;
+    private Connection conn = null;
+    private SQLConnectionFactory connectionFactory = null;
 
 	/**
 	 *
@@ -60,12 +61,29 @@ public class DBUtil {
 		this.conn = conn;
 	}
 
+    public DBUtil(SQLConnectionFactory connectionFactory){
+
+        checkNull(connectionFactory, "connectionFactory");
+        this.connectionFactory = connectionFactory;
+    }
+
 
 	private Connection createConnection(){
 
 		if (this.conn != null){
 			return this.conn;			
-		}
+		}else if (this.connectionFactory != null){
+
+		    Connection con = null;
+            try {
+                con = this.connectionFactory.getConnection();
+            } catch (SQLException e) {
+                logger.error("Erro ao obter conexção. msg=" + e.getMessage());
+                e.printStackTrace(System.err);
+            }
+
+            return con;
+        }
 
 		try {
 
@@ -99,7 +117,6 @@ public class DBUtil {
                     e1.printStackTrace(System.err);
                 }
                 try {
-                    // só fazer commit se a inicialização tiver sido via connectionType
                     if (!isConProvided && !isClosed){
                         c.commit();
                     }
@@ -107,8 +124,6 @@ public class DBUtil {
                     e.printStackTrace(System.err);
                 }finally{
                     try {
-                        // só entrar aqui se a inicialização tiver sido via connectionType
-                        // e nao partilhando a Connection
                         if (!isConProvided && !isClosed){
                             c.close();
                         }
