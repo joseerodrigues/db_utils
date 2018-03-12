@@ -1,6 +1,6 @@
 package com.cave.utils.dbutil;
 
-import com.cave.utils.dbutil.mapper.MapResultSetMapper;
+import com.cave.utils.dbutil.mapper.Mappers;
 import com.cave.utils.dbutil.mapper.ResultSetMap;
 import com.cave.utils.dbutil.mapper.SimpleResultSetMapper;
 import org.slf4j.Logger;
@@ -11,7 +11,6 @@ import java.sql.*;
 import java.util.List;
 
 import static com.cave.utils.dbutil.Checks.checkNull;
-import static com.cave.utils.dbutil.Checks.checkNullOrEmpty;
 
 /**
  *
@@ -33,6 +32,13 @@ public class DBUtil {
 			return o;
 		}		
 	}
+
+    private static final class RsResultSetMapper extends SimpleResultSetMapper<ResultSet>{
+        @Override
+        public ResultSet mapObject(ResultSet rs) throws SQLException {
+            return rs;
+        }
+    }
 
 	/**
 	 *
@@ -72,311 +78,426 @@ public class DBUtil {
 		
 		return null;
 	}
-	
-	private void close(Object ... objs){
-	
-		for (Object o : objs){
-			
-			if (o == null){
-				continue;
-			}
-			
-			if (o instanceof Connection){
-				
-				Connection c = (Connection)o;
-				try {
-					if (this.conn == null && !c.isClosed()){
-						c.commit();
-						c.close();
-					}
-				} catch (SQLException e) {
-					e.printStackTrace(System.err);
-				}			
-				
-			}else if(o instanceof Statement){
-				
-				Statement s = (Statement)o;
-				try {
-					s.close();
-				} catch (SQLException e) {
-					e.printStackTrace(System.err);
-				}			
-				
-			}else if (o instanceof ResultSet){
-				
-				ResultSet rs = (ResultSet) o;
-				try {
-					rs.close();
-				} catch (SQLException e) {
-					e.printStackTrace(System.err);
-				}			
-			}
-		}
+
+	private DataAccessException translateException(Throwable t) {
+		return new DataAccessException(t);
 	}
-	
+
+    private void close(Object ... objs){
+        for (Object o : objs){
+            if (o == null){
+                continue;
+            }
+            if (o instanceof Connection){
+                Connection c = (Connection)o;
+                boolean isClosed = false;
+                boolean isConProvided = this.conn != null;
+
+                try {
+                    isClosed = c.isClosed();
+                } catch (SQLException e1) {
+                    e1.printStackTrace(System.err);
+                }
+                try {
+                    // só fazer commit se a inicialização tiver sido via connectionType
+                    if (!isConProvided && !isClosed){
+                        c.commit();
+                    }
+                } catch (SQLException e) {
+                    e.printStackTrace(System.err);
+                }finally{
+                    try {
+                        // só entrar aqui se a inicialização tiver sido via connectionType
+                        // e nao partilhando a Connection
+                        if (!isConProvided && !isClosed){
+                            c.close();
+                        }
+                    } catch (SQLException e) {
+                        e.printStackTrace(System.err);
+                    }
+                }
+            }else if(o instanceof Statement){
+                Statement s = (Statement)o;
+                try {
+                    s.close();
+                } catch (SQLException e) {
+                    e.printStackTrace(System.err);
+                }
+            }else if (o instanceof ResultSet){
+                ResultSet rs = (ResultSet) o;
+                try {
+                    rs.close();
+                } catch (SQLException e) {
+                    e.printStackTrace(System.err);
+                }
+            }
+        }
+    }
+
+    private void rollback(Connection conn){
+        try {
+            if (!conn.getAutoCommit()){
+                try {
+                    conn.rollback();
+                } catch (SQLException er) {
+                    er.printStackTrace(System.err);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace(System.err);
+        }
+    }
+
 	private Statement createStatement(Connection conn, boolean generateKeys, String query, Object ... params) throws SQLException{
 
-	    if (params == null || params.length == 0){
-	        if (!generateKeys){
+        Checks.checkNullOrEmpty(query, "query");
+        Checks.checkNull(conn, "conn");
+
+        PreparedStatement pstmt = null;
+
+        if (params == null || params.length == 0){
+            if (!generateKeys){
                 return conn.createStatement();
             }
         }
 
-		PreparedStatement pstmt = conn.prepareStatement(query);		
-		ParameterMetaData paramMetadata = pstmt.getParameterMetaData();
-		
-		int paramCount = paramMetadata.getParameterCount();
-		
-		if (paramCount > 0 && (params != null && params.length > 0)){
-			for (int i = 1; i <= paramCount; i++){
-				Object paramValue = params[i - 1];				
-				pstmt.setObject(i, paramValue);
-			}										
-		}
-		
-		return pstmt;
+        if (generateKeys){
+            pstmt = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+        }else{
+            pstmt = conn.prepareStatement(query);
+        }
+
+        ParameterMetaData paramMetadata = null;
+        int paramCount = 0;
+        try{
+            paramMetadata = pstmt.getParameterMetaData();
+            paramCount = paramMetadata.getParameterCount();
+        }catch(SQLException sqle){
+            //driver sqlServer nao suporta getParameterMetaData
+            String sqlServerMsg = "The PreparedStatement.getParameterMetaData method is not implemented.";
+            String msg = "" + sqle.getMessage();
+
+            if (!msg.equals(sqlServerMsg)){
+                sqle.printStackTrace(System.err);
+            }
+        }
+
+        if (paramMetadata == null && params != null){
+            paramCount = params.length;
+        }
+
+        if (paramCount > 0 && (params != null && params.length > 0)){
+            for (int i = 1; i <= paramCount; i++){
+                Object paramValue = params[i - 1];
+                pstmt.setObject(i, paramValue);
+            }
+        }
+
+        return pstmt;
 	}
 
-	/**
-	 *
-	 * @param query
-	 * @param rsMapper
-	 * @param rsIterator
-	 * @param <T>
-	 */
-	public <T> void iterate(String query, ResultSetMapper<T> rsMapper, ResultSetIterator<T> rsIterator){
-		iterate(query, rsMapper, rsIterator, (Object[])null);
-	}
+    public void iterate(String query, ResultSetIterator<ResultSet> rsIterator) throws DataAccessException{
+        iterate(query, new RsResultSetMapper(), rsIterator, (Object[])null);
+    }
 
-	/**
-	 *
-	 * @param query
-	 * @param rsMapper
-	 * @param rsIterator
-	 * @param params
-	 * @param <T>
-	 */
-	public <T> void iterate(String query, ResultSetMapper<T> rsMapper, ResultSetIterator<T> rsIterator, Object ... params){
-	    checkNullOrEmpty(query, "query");
-		Connection conn = createConnection();
+    public void iterate(String query, ResultSetIterator<ResultSet> rsIterator, Object ... params) throws DataAccessException{
+        iterate(query, new RsResultSetMapper(), rsIterator, params);
+    }
 
-		checkNull(conn, "conn");
-		checkNull(rsMapper, "rsMapper");
-		checkNull(rsIterator, "rsIterator");
+    public <T> void iterate(String query, ResultSetMapper<T> rsMapper, ResultSetIterator<T> rsIterator) throws DataAccessException{
+        iterate(query, rsMapper, rsIterator, (Object[])null);
+    }
 
-		Statement stmt = null;
-		ResultSet rs = null;
-		
-		try {
-			stmt = createStatement(conn, false, query, params);
+    public <T> void iterate(String query, ResultSetMapper<T> rsMapper, ResultSetIterator<T> rsIterator, Object ... params) throws DataAccessException{
+        Checks.checkNullOrEmpty(query, "query");
+        Connection conn = createConnection();
 
-			if (stmt instanceof PreparedStatement){
+        Checks.checkNull(conn, "conn");
+        Checks.checkNull(rsMapper, "rsMapper");
+        Checks.checkNull(rsIterator, "rsIterator");
+
+        Statement stmt = null;
+        ResultSet rs = null;
+
+        try {
+            long startTime = System.currentTimeMillis();
+            stmt = createStatement(conn, false, query, params);
+
+            if (stmt instanceof PreparedStatement){
                 rs = ((PreparedStatement)stmt).executeQuery();
             }else{
-			    rs = stmt.executeQuery(query);
+                rs = stmt.executeQuery(query);
+            }
+            logQuery(query, startTime, params);
+
+            rsMapper.init(rs);
+            rsIterator.init();
+
+            while(rs.next()){
+                T mappedObject = rsMapper.mapObject(rs);
+                if (mappedObject != null){
+                    boolean continueIteration = rsIterator.iterate(mappedObject);
+
+                    if (!continueIteration){
+                        break;
+                    }
+                }
             }
 
-			rsMapper.init(rs);
-			rsIterator.init();
-			
-			while(rs.next()){
-				
-				T mappedObject = rsMapper.mapObject(rs);
-				
-				if (mappedObject != null){
-					boolean continueIteration = rsIterator.iterate(mappedObject);
-					
-					if (!continueIteration){
-						break;
-					}
-				}
-			}						
-			
-		} catch (SQLException e) {
+        } catch (SQLException e) {
             logErrorInQuery(e, query, params);
-			e.printStackTrace(System.err);
-		}finally{
-			close(rs, stmt, conn);
-			rsMapper.terminate();
-			rsIterator.terminate();
-		}
-	}
-	
-	public <T> List<T> selectAll(String query, ResultSetMapper<T> rsMapper){
-		return selectAll(query, rsMapper, (Object[])null);
-	}
-	
-	public <T> List<T> selectAll(String query, ResultSetMapper<T> rsMapper, Object ... params){
-				
-		ListSimpleResultSetIterator<T> listIterator = new ListSimpleResultSetIterator<>(true);
-		
-		iterate(query, rsMapper, listIterator, params);
-				
-		return listIterator.getList();
-	}
-	
-	public <T> T selectOne(String query, ResultSetMapper<T> rsMapper){
-		return selectOne(query, rsMapper, (Object[])null);
-	}
-	
-	public <T> T selectOne(String query, ResultSetMapper<T> rsMapper, Object ... params){
-		
-		ListSimpleResultSetIterator<T> listIterator = new ListSimpleResultSetIterator<>(false);
-					
-		iterate(query, rsMapper, listIterator, params);
-		
-		final List<T> list = listIterator.getList();
-		
-		T ret = null;
-		
-		if (!list.isEmpty()){
-			ret = list.get(0);
-		}
-		
-		return ret;
-	}
-	
-	public boolean hasResults(String query){
-		return hasResults(query, (Object[])null);
-	}
-	
-	public boolean hasResults(String query, Object ... params){
-		
-		Object result = selectOne(query, DBUtil.dummyMapper, params);
-		
-		return result != null;
-	}
-	
-	public <T> T useConnection(JDBCAction<T> action){
-		Connection conn = createConnection();
-		checkNull(conn, "conn");
-        checkNull(action, "action");
+            e.printStackTrace(System.err);
+            throw translateException(e);
+        }finally{
+            close(rs, stmt, conn);
+            rsMapper.terminate();
+            rsIterator.terminate();
+        }
+    }
 
-        boolean autoCommit = true;
-		try{
-		    autoCommit = conn.getAutoCommit();
-			return action.execute(new UncloseableConnectionImpl(conn));			
-		}catch(Throwable t){
-			t.printStackTrace(System.err);
-		}finally{
-            try {
-                conn.setAutoCommit(autoCommit);
-            } catch (SQLException e) {
-                e.printStackTrace(System.err);
-            }
+    public <T> List<T> selectAll(String query, ResultSetMapper<T> rsMapper) throws DataAccessException{
+        return selectAll(query, rsMapper, (Object[])null);
+    }
+
+    public <T> List<T> selectAll(String query, ResultSetMapper<T> rsMapper, Object ... params) throws DataAccessException{
+        ListSimpleResultSetIterator<T> listIterator = new ListSimpleResultSetIterator<T>(true);
+
+        iterate(query, rsMapper, listIterator, params);
+
+        return listIterator.getList();
+    }
+
+    public <T> T selectOne(String query, ResultSetMapper<T> rsMapper) throws DataAccessException{
+        return selectOne(query, rsMapper, (Object[])null);
+    }
+
+    public <T> T selectOne(String query, ResultSetMapper<T> rsMapper, Object ... params) throws DataAccessException{
+
+        ListSimpleResultSetIterator<T> listIterator = new ListSimpleResultSetIterator<T>(false);
+
+        iterate(query, rsMapper, listIterator, params);
+
+        final List<T> list = listIterator.getList();
+
+        T ret = null;
+
+        if (!list.isEmpty()){
+            ret = list.get(0);
+        }
+
+        return ret;
+    }
+
+    /**
+     * Checks if a query returns results
+     *
+     * @param query
+     * @return true if the query returns results, false otherwise
+     * @author 92429
+     */
+    public boolean hasResults(String query) throws DataAccessException{
+        return hasResults(query, (Object[])null);
+    }
+
+    /**
+     * Checks if a query returns results
+     *
+     * @param query
+     * @param params used with preparedStatement query sintax (" WHERE XPTO = ?")
+     * @return true if the query returns results, false otherwise
+     */
+    public boolean hasResults(String query, Object ... params) throws DataAccessException{
+
+        Object result = selectOne(query, DBUtil.dummyMapper, params);
+
+        return result != null;
+    }
+
+    /**
+     * Provides a way to reuse this connection.
+     *
+     * @param action action to execute with the connection.
+     * The connection will be closed when the action returns,
+     * unless DBUtil was created with a connection in the first place.
+     *
+     * @return the value that JDBCAction returned
+     */
+    public <T> T useConnection(JDBCAction<T> action) throws DataAccessException{
+        Checks.checkNull(action, "action");
+        Connection conn = createConnection();
+        Checks.checkNull(conn, "conn");
+
+        try{
+            return action.execute(new UncloseableConnectionImpl(conn));
+        }catch(Throwable t){
+            rollback(conn);
+            t.printStackTrace(System.err);
+            throw translateException(t);
+        }finally{
             close(conn);
-		}
-		
-		return null;
-	}
+        }
+    }
 
-	private int executeUpdate(String sqlUpdate, Object ... params){
-        checkNullOrEmpty(sqlUpdate, "sqlUpdate");
-		Connection conn = createConnection();
-		checkNull(conn, "conn");
-		
-		Statement stmt = null;
-		
-		try {
-			stmt = createStatement(conn, false, sqlUpdate, params);
+    private int executeUpdate(String sqlUpdate, Object ... params) throws DataAccessException{
+        Connection conn = createConnection();
+        Checks.checkNull(conn, "conn");
+        Statement stmt = null;
 
-			if (stmt instanceof PreparedStatement){
-                return ((PreparedStatement)stmt).executeUpdate();
+        try {
+            int ret = -1;
+            long startTime = System.currentTimeMillis();
+            stmt = createStatement(conn, false, sqlUpdate, params);
+
+            if (stmt instanceof PreparedStatement){
+                ret = ((PreparedStatement)stmt).executeUpdate();
             }else{
-			    return stmt.executeUpdate(sqlUpdate);
+                ret = stmt.executeUpdate(sqlUpdate);
             }
-			
-		} catch (SQLException e) {
+            logQuery(sqlUpdate, startTime, params);
+
+            return ret;
+
+        } catch (SQLException e) {
             logErrorInQuery(e, sqlUpdate, params);
-			e.printStackTrace(System.err);
-		}finally{
-			close(stmt, conn);
-		}
-		
-		return -1;
-	}
+            e.printStackTrace(System.err);
+            throw translateException(e);
+        }finally{
+            close(stmt, conn);
+        }
+    }
 
-	public int insert(String sqlInsert){
-		return executeUpdate(sqlInsert, (Object[])null);
-	}
-	
-	public int insert(String sqlInsert, Object ... params){
-		return executeUpdate(sqlInsert, params);
-	}
-	
-	public int update(String sqlUpdate){
-		return executeUpdate(sqlUpdate, (Object[])null);
-	}
-	
-	public int update(String sqlUpdate, Object ... params){
-		return executeUpdate(sqlUpdate, params);
-	}
-	
-	public int delete(String sqlDelete){
-		return executeUpdate(sqlDelete, (Object[])null);
-	}
-	
-	public int delete(String sqlDelete, Object ... params){
-		return executeUpdate(sqlDelete, params);
-	}
+    public int insert(String sqlInsert) throws DataAccessException{
+        return executeUpdate(sqlInsert, (Object[])null);
+    }
 
-	public ResultSetMap getKeysForInsert(String sqlInsert, Object ... params){
-		checkNullOrEmpty(sqlInsert, "sqlInsert");
-		Connection conn = createConnection();
-		checkNull(conn, "conn");
-		Statement stmt = null;
+    /**
+     *
+     * @param sqlInsert
+     * @param params variable list of params
+     * @return the count of rows for INSERT, UPDATE or DELETE statements, 0 for statements that return nothing, -1 in case of error
+     */
+    public int insert(String sqlInsert, Object ... params) throws DataAccessException{
+        return executeUpdate(sqlInsert, params);
+    }
 
-		ResultSetMap ret = new ResultSetMap();
-		ResultSet generatedKeys = null;
-		try {
-			stmt = createStatement(conn, true, sqlInsert, params);
+    /**
+     *
+     * @param sqlUpdate
+     * @return the count of rows for INSERT, UPDATE or DELETE statements, 0 for statements that return nothing, -1 in case of error
+     */
+    public int update(String sqlUpdate) throws DataAccessException{
+        return executeUpdate(sqlUpdate, (Object[])null);
+    }
 
-			if (stmt instanceof PreparedStatement){
-				((PreparedStatement)stmt).executeUpdate();
-			}else{
-				stmt.executeUpdate(sqlInsert, Statement.RETURN_GENERATED_KEYS);
-			}
+    /**
+     *
+     * @param sqlUpdate
+     * @param params variable list of params
+     * @return the count of rows for INSERT, UPDATE or DELETE statements, 0 for statements that return nothing, -1 in case of error
+     */
+    public int update(String sqlUpdate, Object ... params) throws DataAccessException{
+        return executeUpdate(sqlUpdate, params);
+    }
 
-			generatedKeys = stmt.getGeneratedKeys();
+    /**
+     *
+     * @param sqlDelete
+     * @return the count of rows for INSERT, UPDATE or DELETE statements, 0 for statements that return nothing, -1 in case of error
+     */
+    public int delete(String sqlDelete) throws DataAccessException{
+        return executeUpdate(sqlDelete, (Object[])null);
+    }
 
-			MapResultSetMapper mapper = new MapResultSetMapper();
-			mapper.init(generatedKeys);
+    /**
+     *
+     * @param sqlDelete
+     * @param params variable list of params
+     * @return the count of rows for INSERT, UPDATE or DELETE statements, 0 for statements that return nothing, -1 in case of error
+     */
+    public int delete(String sqlDelete, Object ... params) throws DataAccessException{
+        return executeUpdate(sqlDelete, params);
+    }
 
-			while(generatedKeys.next()){
-				ret.putAll(mapper.mapObject(generatedKeys));
-			}
+    public ResultSetMap getKeysForInsert(String sqlInsert) throws DataAccessException{
+        return getKeysForInsert(sqlInsert, (Object[])null);
+    }
 
-			mapper.terminate();
+    public ResultSetMap getKeysForInsert(String sqlInsert, Object ... params) throws DataAccessException{
+        Connection conn = createConnection();
+        Statement stmt = null;
 
-		} catch (SQLException e) {
-			logErrorInQuery(e, sqlInsert, params);
-			e.printStackTrace(System.err);
-		}finally{
-			close(generatedKeys, stmt, conn);
-		}
+        ResultSetMap ret = new ResultSetMap();
+        ResultSet generatedKeys = null;
+        try {
+            long startTime = System.currentTimeMillis();
+            stmt = createStatement(conn, true, sqlInsert, params);
 
-		return ret;
-	}
+            if (stmt instanceof PreparedStatement){
+                ((PreparedStatement)stmt).executeUpdate();
+            }else{
+                stmt.executeUpdate(sqlInsert, Statement.RETURN_GENERATED_KEYS);
+            }
+            logQuery(sqlInsert, startTime, params);
 
-	private void logErrorInQuery(Throwable t, String query, Object ... params){
+            generatedKeys = stmt.getGeneratedKeys();
 
-		StringBuilder sb = new StringBuilder();
+            ResultSetMapper<ResultSetMap> mapper = Mappers.mapMapper();
+            mapper.init(generatedKeys);
 
-		sb.append("Exception Thrown: ").append("msg = ").append(t.getMessage()).append(". SQL = ").append(query);
+            while(generatedKeys.next()){
+                ret.putAll(mapper.mapObject(generatedKeys));
+            }
 
-		if (params != null && params.length > 0){
-			sb.append(". PARAMS = [");
+            mapper.terminate();
 
-			for (int i = 0, l = params.length; i < l; i++){
-				sb.append(params[i]);
+        } catch (SQLException e) {
+            logErrorInQuery(e, sqlInsert, params);
+            e.printStackTrace(System.err);
+            throw translateException(e);
+        }finally{
+            close(generatedKeys, stmt, conn);
+        }
 
-				if (i + 1 < l){
-					sb.append(", ");
-				}
-			}
-			sb.append("]");
-		}
+        return ret;
+    }
 
-		logger.error(sb.toString());
-	}
+    private String normalizeSQL(String query){
+        return query.replaceAll("\\r", "").replaceAll("\\n", "");
+    }
+
+    private String genSQLLog(String query, Object ... params){
+        StringBuilder sb = new StringBuilder();
+
+        sb.append("SQL = ").append(normalizeSQL(query));
+
+        if (params != null && params.length > 0){
+            sb.append(". PARAMS = [");
+
+            for (int i = 0, l = params.length; i < l; i++){
+                sb.append(params[i]);
+
+                if (i + 1 < l){
+                    sb.append(", ");
+                }
+            }
+            sb.append("]");
+        }
+
+        return sb.toString();
+    }
+
+    private void logQuery(String query, long startTime, Object ... params){
+        long diff = System.currentTimeMillis() - startTime;
+        String msg = genSQLLog(query, params) + " (t=" + diff + "ms)";
+        logger.debug(msg);
+    }
+
+    private void logErrorInQuery(Throwable t, String query, Object ... params){
+        StringBuilder sb = new StringBuilder();
+
+        sb.append("Exception Thrown: ").append("msg = ").append(t.getMessage())
+                .append(". ").append(genSQLLog(query, params));
+
+        logger.error(sb.toString());
+    }
 }
