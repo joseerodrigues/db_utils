@@ -15,7 +15,7 @@ DBUtil dbUtil = new DBUtil(conn);
 
 Or 
 
-````
+````java
 DBUtil dbUtil = new DBUtil(new SQLConnectionFactory() {
     @Override
     public Connection getConnection() throws SQLException {
