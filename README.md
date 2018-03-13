@@ -13,6 +13,17 @@ Connection conn  = ...;
 DBUtil dbUtil = new DBUtil(conn);
 ````
 
+Or 
+
+````
+DBUtil dbUtil = new DBUtil(new SQLConnectionFactory() {
+    @Override
+    public Connection getConnection() throws SQLException {
+        return makeConnectionSomehow();
+    }
+});
+````
+
 >**NOTE**
 When passing a *java.sql.Connection* to the constructor instead of a *javax.sql.DataSource*, 
 the connection will not be closed by *DBUtil* and should be closed by the client.
