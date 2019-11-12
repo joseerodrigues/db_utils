@@ -1,6 +1,8 @@
 package com.cave.utils.dbutil.mapper;
 
 import com.cave.utils.dbutil.ResultSetMapper;
+import com.cave.utils.dbutil.annotation.DBColumn;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
