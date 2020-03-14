@@ -8,7 +8,7 @@ public interface ResultSetIterator<T> {
 	
 	/**
 	 * 
-	 * @param item
+	 * @param item the item mapped from the resultSet
 	 * @return true to continue iterating, false otherwise
 	 */
 	boolean iterate(T item);

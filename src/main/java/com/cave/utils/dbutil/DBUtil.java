@@ -141,7 +141,7 @@ public class DBUtil {
 
 	/**
 	 *
-	 * @param ds
+	 * @param ds dataSource to use
 	 */
 	public DBUtil(DataSource ds){
 		checkNull(ds, "ds");
@@ -159,8 +159,7 @@ public class DBUtil {
 
 	/**
 	 *
-	 * @param conn
-	 * @param loggerClass
+	 * @param conn connection to use
 	 */
 	public DBUtil(Connection conn){
 
@@ -438,7 +437,7 @@ public class DBUtil {
 	/**
 	 * Checks if a query returns results
 	 *
-	 * @param query
+	 * @param query to execute
 	 * @return true if the query returns results, false otherwise
 	 * @author 92429
 	 */
@@ -449,7 +448,7 @@ public class DBUtil {
 	/**
 	 * Checks if a query returns results
 	 *
-	 * @param query
+	 * @param query query to execute
 	 * @param params used with preparedStatement query sintax (" WHERE XPTO = ?")
 	 * @return true if the query returns results, false otherwise
 	 */
@@ -531,7 +530,7 @@ public class DBUtil {
 
 	/**
 	 *
-	 * @param sqlInsert
+	 * @param sqlInsert insert statement
 	 * @param params variable list of params
 	 * @return the count of rows for INSERT, UPDATE or DELETE statements, 0 for statements that return nothing, -1 in case of error
 	 */
@@ -541,7 +540,7 @@ public class DBUtil {
 
 	/**
 	 *
-	 * @param sqlUpdate
+	 * @param sqlUpdate update statement
 	 * @return the count of rows for INSERT, UPDATE or DELETE statements, 0 for statements that return nothing, -1 in case of error
 	 */
 	public int update(String sqlUpdate) throws DataAccessException{
@@ -550,7 +549,7 @@ public class DBUtil {
 
 	/**
 	 *
-	 * @param sqlUpdate
+	 * @param sqlUpdate update statement
 	 * @param params variable list of params
 	 * @return the count of rows for INSERT, UPDATE or DELETE statements, 0 for statements that return nothing, -1 in case of error
 	 */
@@ -560,7 +559,7 @@ public class DBUtil {
 
 	/**
 	 *
-	 * @param sqlDelete
+	 * @param sqlDelete delete statement
 	 * @return the count of rows for INSERT, UPDATE or DELETE statements, 0 for statements that return nothing, -1 in case of error
 	 */
 	public int delete(String sqlDelete) throws DataAccessException{
@@ -569,7 +568,7 @@ public class DBUtil {
 
 	/**
 	 *
-	 * @param sqlDelete
+	 * @param sqlDelete delete statement
 	 * @param params variable list of params
 	 * @return the count of rows for INSERT, UPDATE or DELETE statements, 0 for statements that return nothing, -1 in case of error
 	 */
