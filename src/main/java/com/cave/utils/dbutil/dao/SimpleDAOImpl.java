@@ -49,9 +49,7 @@ public class SimpleDAOImpl<T> implements DAO<T>{
 
 	@Override
 	public long count(String sqlCondition, Object... params) {
-		String query = getSqlSelect(sqlCondition, "COUNT(1) AS COUNT");
-
-		return dbUtil.selectOne(query, COUNT_MAPPER, params);
+		return count(this.dbUtil, sqlCondition, params);
 	}
 
 	@Override
@@ -59,9 +57,21 @@ public class SimpleDAOImpl<T> implements DAO<T>{
 		return count("", (Object[])null);
 	}
 
-	@SuppressWarnings("unchecked")
+	@Override
+	public long count(DBUtil dbUtil, String sqlCondition, Object... params) {
+		String query = getSqlSelect(sqlCondition, "COUNT(1) AS COUNT");
+
+		return dbUtil.selectOne(query, COUNT_MAPPER, params);
+	}
+
 	@Override
 	public List<T> selectAll(String sqlCondition, Object... params) {
+		return selectAll(this.dbUtil, sqlCondition, params);
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public List<T> selectAll(DBUtil dbUtil, String sqlCondition, Object... params) {
 		String query = getSqlSelect(sqlCondition, "*");
 
 		return dbUtil.selectAll(query, classInfo.mapper, params);
@@ -73,14 +83,18 @@ public class SimpleDAOImpl<T> implements DAO<T>{
 	}
 
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public T selectOne(String sqlCondition, Object... params) {
+		return selectOne(this.dbUtil, sqlCondition, params);
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public T selectOne(DBUtil dbUtil, String sqlCondition, Object... params) {
 		String query = getSqlSelect(sqlCondition, "*");
 
 		return (T) dbUtil.selectOne(query, classInfo.mapper, params);
 	}
-
 
 	@Override
 	public boolean insert(T obj) {

@@ -14,12 +14,15 @@ public interface DAO<T> {
 	ResultSetMapper<T> getResultSetMapper();
 
 	long count();
+	long count(DBUtil dbUtil, String sqlCondition, Object ... params);
 	long count(String sqlCondition, Object ... params);
 
 	List<T> selectAll();
 	List<T> selectAll(String sqlCondition, Object ... params);
+	List<T> selectAll(DBUtil dbUtil, String sqlCondition, Object ... params);
 
 	T selectOne(String sqlCondition, Object ... params);
+	T selectOne(DBUtil dbUtil, String sqlCondition, Object ... params);
 
 	boolean insert(T obj);
 	boolean insert(DBUtil dbUtil, T obj);

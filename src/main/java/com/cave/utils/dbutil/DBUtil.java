@@ -494,6 +494,10 @@ public class DBUtil {
 		});
 	}
 
+	public void rollback() {
+		rollback(conn);
+	}
+
 	private int executeUpdate(String sqlUpdate, Object ... params) throws DataAccessException{
 		Connection conn = createConnection();
 		Checks.checkNull(conn, "conn");
@@ -624,13 +628,6 @@ public class DBUtil {
 	private String normalizeSQL(String query){
 		return query.replaceAll("\\r", "").replaceAll("\\n", "");
 	}
-
-	//    private String genCallerLogMsg() {
-	//
-	//    	StackTraceElement ste = getCallerInfo();
-	//
-	//    	return ste.getMethodName() + "()";
-	//    }
 
 	private String genSQLLog(String query, Object ... params){
 		StringBuilder sb = new StringBuilder();

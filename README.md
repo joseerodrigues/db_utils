@@ -91,6 +91,7 @@ id | shortinfo | quantity
 And the following java Entity
 
 ````java
+@DBTable("TEST_TABLE")
 public class Product {
     @DBColumn(value = "shortinfo", trim = true)
     private String description = null;
@@ -121,3 +122,30 @@ List<Product> products = dbUtil.selectAll("SELECT * FROM TEST_TABLE WHERE quanti
 
 >**Note**
 >*selectAll* fetches eagerly. Be careful when using it to retrieve very large amounts of data.
+
+* insideTransaction and rollback
+
+
+````java
+dbUtil.insideTransaction(transactionDBUtil ->
+{
+    DAO<Product> productDAO = DAOBuilder.build(transactionDBUtil, Product.class);
+
+    List<Server> allProducts = productDAO.selectAll();
+    assertNotNull(allProducts);
+    assertTrue(allProducts.size() > 0);
+
+    for (Server s : allProducts) {
+        assertTrue(productDAO.delete(s));
+    }
+
+    // all deleted
+    assertEquals(0, productDAO.count());
+
+    transactionDBUtil.rollback();
+
+    // all restored
+    assertEquals(allProducts.size(), productDAO.count());
+    return true;
+});
+````
