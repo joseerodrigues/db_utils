@@ -1,6 +1,18 @@
 # db_utils
 Really simple helper for JDBC.
 
+
+Maven dependency
+
+```xml
+<dependency>
+  <groupId>io.github.joseerodrigues.utils</groupId>
+  <artifactId>db_utils</artifactId>
+  <version>1.0.4</version>
+</dependency>
+```
+
+
 ````java
 DataSource ds = ...;
 DBUtil dbUtil = new DBUtil(ds);
