@@ -239,7 +239,9 @@ public class DBUtil {
 				}
 				try {
 					if (!isConProvided && !isClosed){
-						c.commit();
+						if (!c.getAutoCommit()){
+							c.commit();
+						}						
 					}
 				} catch (SQLException e) {
 					e.printStackTrace(System.err);
