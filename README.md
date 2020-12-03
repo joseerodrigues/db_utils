@@ -8,7 +8,7 @@ Maven dependency
 <dependency>
   <groupId>io.github.joseerodrigues.utils</groupId>
   <artifactId>db_utils</artifactId>
-  <version>1.0.4</version>
+  <version>1.0.5</version>
 </dependency>
 ```
 
